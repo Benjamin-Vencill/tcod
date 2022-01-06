@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Iterable, TYPE_CHECKING
+from typing import Iterable, Optional, TYPE_CHECKING
 
 import numpy as np
 from tcod.console import Console
@@ -24,6 +24,16 @@ class GameMap:
         Return True if x and y are inside the map boundary
         """
         return 0 <= x < self.width and 0 <= y < self.height
+
+    def get_blocking_entity_at_location(self, location_x: int, location_y: int) -> Optional[Entity]:
+        """
+        If there is a blocking entity at the location, return it. 
+        Otherwise, return None.
+        """
+        for entity in self.entities:
+            if entity.blocks_movement and entity.x == location_x and entity.y == location_y:
+                return entity
+        return None
 
     def render(self, console: Console) -> None:
         """
