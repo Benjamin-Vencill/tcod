@@ -4,11 +4,11 @@ from typing import Optional, Tuple, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from engine import Engine
-    from entity import Entity
+    from entity import Actor, Entity
 
 
 class Action:
-    def __init__(self, entity: Entity) -> None:
+    def __init__(self, entity: Actor) -> None:
         super().__init__()
         self.entity = entity
 
@@ -35,12 +35,18 @@ class EscapeAction(Action):
     def perform(self) -> None:
         raise SystemExit()
 
+
+class WaitAction(Action):
+    def perform(self) -> None:
+        pass
+
+
 class DirectionalAction(Action):
     """
     An action which first checks the tile being moved into, then performs an
     action based on the tile contents.
     """
-    def __init__(self, entity: Entity, dx: int, dy: int) -> None:
+    def __init__(self, entity: Actor, dx: int, dy: int) -> None:
         super().__init__(entity)
         self.dx = dx
         self.dy = dy
@@ -54,6 +60,13 @@ class DirectionalAction(Action):
 
     @property
     def blocking_entity(self) -> Optional[Entity]:
+        return self.engine.game_map.get_blocking_entity_at_location(*self.dest_xy)
+
+    @property
+    def target_actor(self) -> Optional[Actor]:
+        """
+        Return the actor at this action's destination
+        """
         return self.engine.game_map.get_blocking_entity_at_location(*self.dest_xy)
 
     def perform(self) -> None:
@@ -76,14 +89,23 @@ class MovementAction(DirectionalAction):
 
         self.entity.move(self.dx, self.dy)
 
+
 class MeleeAttack(DirectionalAction):
     def perform(self) -> None:
-        target = self.blocking_entity
+        target = self.target_actor
         if not target:
             # No entity to attack
             return
+        
+        damage = self.entity.fighter.power - target.fighter.defense
 
-        print(f"You kick the {target.name}, much to its annoyance!")
+        attack_desc = f"{self.entity.name.capitalize()} attacks {target.name}"
+
+        if damage > 0:
+            target.fighter.hp -= damage
+            print(f"{attack_desc} for {damage} hit points!")
+        else:
+            print(f"{attack_desc} but does no damage.")
 
 
 class BumpAction(DirectionalAction):
@@ -92,7 +114,7 @@ class BumpAction(DirectionalAction):
     tile being targeted.
     """
     def perform(self) -> None:
-        if self.blocking_entity:
+        if self.target_actor:
             return MeleeAttack(self.entity, self.dx, self.dy).perform()
         else:
             return MovementAction(self.entity, self.dx, self.dy).perform()
