@@ -2,6 +2,7 @@ import copy
 
 import tcod
 
+import color
 from engine import Engine
 import entity_factories
 from procgen import generate_dungeon
@@ -11,7 +12,7 @@ def main() -> None:
     screen_height = 50
 
     map_width = 80
-    map_height = 45
+    map_height = 43
     room_max_size = 10
     room_min_size = 6
     max_rooms = 30
@@ -34,6 +35,9 @@ def main() -> None:
         engine=engine,
     )
     engine.update_fov()
+    engine.message_log.add_message(
+        "Hello and welcome adventurer!", color.welcome_text
+    )
 
 
 
